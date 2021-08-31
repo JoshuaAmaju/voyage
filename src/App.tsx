@@ -1,5 +1,6 @@
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 import Home from "./modules/Home";
+import Player from "./modules/Player";
 
 function App() {
   return (
@@ -7,6 +8,9 @@ function App() {
       <Switch>
         <Route exact path="/">
           <Home />
+        </Route>
+        <Route path="/player">
+          <Player />
         </Route>
       </Switch>
     </BrowserRouter>

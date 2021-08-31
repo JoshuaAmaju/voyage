@@ -1,8 +1,11 @@
 import { createRef, useCallback } from "react";
 import clsx from "clsx";
-import { Typography, Button } from "../exports";
+import { Typography, Button } from "../exports/components";
+import { useHistory } from "react-router-dom";
 
 function Home() {
+  const history = useHistory();
+
   const ref = createRef<HTMLInputElement>();
 
   const onClick = useCallback(() => {
@@ -27,14 +30,14 @@ function Home() {
       </Button>
 
       <input
+        hidden
         ref={ref}
         type="file"
         name="file"
-        hidden
         onChange={({ target: { files } }) => {
           if (files) {
             const [file] = files;
-            console.log(file);
+            history.push("/player", file);
           }
         }}
       />

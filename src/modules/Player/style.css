@@ -1,0 +1,38 @@
+.main {
+  height: 100%;
+  position: relative;
+  background-color: #000;
+}
+
+.overlay {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  padding: 0.5rem;
+  position: absolute;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.5s ease-in-out;
+}
+
+.user-inactive .overlay {
+  opacity: 0;
+  cursor: none;
+}
+
+.lock .lockable {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.title {
+  max-width: 80%;
+  overflow: hidden;
+  display: -webkit-box;
+  word-break: break-all;
+  -webkit-line-clamp: 1;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+}
