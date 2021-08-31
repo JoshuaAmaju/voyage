@@ -125,8 +125,6 @@ function Player() {
             // ffmpeg.FS('unlink', name);
 
             video.addEventListener("loadeddata", () => {
-              console.log("quality", video.getVideoPlaybackQuality());
-
               resolve({ duration: video.duration });
             });
 
@@ -142,17 +140,27 @@ function Player() {
       watcher: () => (callback) => {
         const video = videoRef.current;
 
-        video?.addEventListener("play", () => {});
-        video?.addEventListener("pause", () => {});
+        const onEnded = () => callback("ENDED");
 
-        video?.addEventListener("timeupdate", () => {
-          callback({ type: "TIME_UPDATE", value: video.currentTime });
-        });
+        const onTimeUpdate = () => {
+          callback({ type: "TIME_UPDATE", value: video?.currentTime });
+        };
+
+        video?.addEventListener("ended", onEnded);
+        video?.addEventListener("timeupdate", onTimeUpdate);
+
+        return () => {
+          video?.removeEventListener("ended", onEnded);
+          video?.removeEventListener("timeupdate", onTimeUpdate);
+        };
       },
     },
   });
 
   const { duration, currentTime } = player.context;
+
+  const isPaused = player.matches({ loaded: "paused" });
+  const isPlaying = player.matches({ loaded: "playing" });
 
   const timeLeft = useMemo(() => {
     return (duration * (duration - currentTime)) / duration;
@@ -168,19 +176,35 @@ function Player() {
     }, 4000);
   }, []);
 
-  useEffect(setInactiveWithTimeout, [setInactiveWithTimeout]);
+  useEffect(() => {
+    setInactiveWithTimeout();
+    return () => clearTimeout(timeout.current as any);
+  }, [setInactiveWithTimeout]);
+
+  // useEffect(() => {
+  //   if (player.changed && player.matches({ loaded: "paused" })) {
+  //     clearTimeout(timeout.current as any);
+  //     timeout.current = null;
+  //     setUserState(true);
+  //   }
+  // }, [player]);
 
   return (
     <div
       ref={ref}
       className={clsx([
         "main",
-        !userActive && "user-inactive",
+        isPlaying && !userActive && "user-inactive",
         layout.matches({ lock: "locked" }) && "lock",
       ])}
       onMouseMove={() => {
-        if (!userActive) setUserState(true);
-        if (!timeout.current) setInactiveWithTimeout();
+        if (isPaused) return;
+
+        if (!userActive) {
+          clearTimeout(timeout.current as any);
+          setInactiveWithTimeout();
+          setUserState(true);
+        }
       }}
     >
       <video ref={videoRef} className="h-full w-full" />
@@ -206,13 +230,8 @@ function Player() {
 
         <main className="lockable w-min flex space-x-4 self-center">
           <IconButton onClick={() => sendPlayer("PLAY_PAUSE")}>
-            {player.matches({ loaded: "playing" }) && (
-              <Pause width={60} height={60} color="white" />
-            )}
-
-            {player.matches({ loaded: "paused" }) && (
-              <Play width={60} height={60} color="white" />
-            )}
+            {isPlaying && <Pause width={60} height={60} color="white" />}
+            {isPaused && <Play width={60} height={60} color="white" />}
           </IconButton>
         </main>
 

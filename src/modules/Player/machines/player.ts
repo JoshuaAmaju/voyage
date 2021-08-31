@@ -13,10 +13,12 @@ type States =
   | {
       value: "loaded" | { loaded: "playing" | "paused" };
       context: Context;
-    };
+    }
+  | { value: "ended"; context: Context };
 
 type Events =
   | { type: "PAUSE" | "PLAY" | "PLAY_PAUSE" }
+  | { type: "ENDED" }
   | { type: "SEEK" | "TIME_UPDATE"; value: number };
 
 const machine = createMachine<Context, Events, States>(
@@ -57,6 +59,8 @@ const machine = createMachine<Context, Events, States>(
           TIME_UPDATE: {
             actions: "setTime",
           },
+
+          ENDED: "ended",
         },
 
         states: {
@@ -83,6 +87,7 @@ const machine = createMachine<Context, Events, States>(
           },
         },
       },
+      ended: {},
     },
   },
   {
