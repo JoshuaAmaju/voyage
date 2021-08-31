@@ -26,6 +26,7 @@ import {
   MoreVertical,
   Unlock,
   Pause,
+  RotateCCW,
 } from "../../exports/icons";
 import {
   Slider,
@@ -39,6 +40,12 @@ import layoutMachine from "./machines/layout";
 
 import "./style.css";
 import { formatTime } from "./utils";
+
+const mainProps = {
+  width: 60,
+  height: 60,
+  color: "white",
+};
 
 function Player() {
   const history = useHistory();
@@ -230,13 +237,14 @@ function Player() {
 
         <main className="lockable w-min flex space-x-4 self-center">
           <IconButton onClick={() => sendPlayer("PLAY_PAUSE")}>
-            {isPlaying && <Pause width={60} height={60} color="white" />}
-            {isPaused && <Play width={60} height={60} color="white" />}
+            {isPaused && <Play {...mainProps} />}
+            {isPlaying && <Pause {...mainProps} />}
+            {player.matches("ended") && <RotateCCW {...mainProps} />}
           </IconButton>
         </main>
 
         <footer className="space-y-2">
-          <div className="lockable flex items-center space-x-3 px-4">
+          <div className="lockable flex items-center space-x-4 px-4">
             <Slider
               max={duration}
               value={currentTime}

@@ -15,6 +15,15 @@
   flex-direction: column;
   justify-content: space-between;
   transition: all 0.5s ease-in-out;
+  background: linear-gradient(
+    #000000c7,
+    #00000070,
+    #0000002e,
+    transparent 10% 90%,
+    #0000002e,
+    #00000070,
+    #000000
+  );
 }
 
 .user-inactive .overlay {

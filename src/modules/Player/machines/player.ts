@@ -87,7 +87,11 @@ const machine = createMachine<Context, Events, States>(
           },
         },
       },
-      ended: {},
+      ended: {
+        on: {
+          PLAY_PAUSE: "loaded.playing",
+        },
+      },
     },
   },
   {

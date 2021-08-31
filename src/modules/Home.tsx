@@ -34,6 +34,7 @@ function Home() {
         ref={ref}
         type="file"
         name="file"
+        // accept="video/*"
         onChange={({ target: { files } }) => {
           if (files) {
             const [file] = files;

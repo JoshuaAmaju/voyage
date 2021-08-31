@@ -7,6 +7,7 @@ import { ReactComponent as Minimize } from "../assets/minimize.svg";
 import { ReactComponent as Lock } from "../assets/lock.svg";
 import { ReactComponent as Unlock } from "../assets/unlock.svg";
 import { ReactComponent as Plus } from "../assets/plus.svg";
+import { ReactComponent as RotateCCW } from "../assets/rotate-ccw.svg";
 
 export {
   ArrowLeft,
@@ -18,4 +19,5 @@ export {
   Unlock,
   Plus,
   Minimize,
+  RotateCCW,
 };
