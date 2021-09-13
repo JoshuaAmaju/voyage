@@ -1,43 +1,30 @@
+import { useMachine } from "@xstate/react";
+import clsx from "clsx";
 import {
-  useRef,
   createRef,
-  useEffect,
-  useState,
-  useMemo,
   useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import { useHistory } from "react-router-dom";
-import { useMachine, asEffect } from "@xstate/react";
-import clsx from "clsx";
-import { parse } from "id3-parser";
+import { IconButton, Slider, Typography } from "../../exports/components";
 import {
-  convertFileToBuffer,
-  fetchFileAsBuffer,
-} from "id3-parser/lib/universal/helpers";
-
-import { fetchFile, createFFmpeg } from "@ffmpeg/ffmpeg";
-
-import {
-  Lock,
-  Play,
-  Minimize,
-  Maximize,
   ArrowLeft,
-  MoreVertical,
-  Unlock,
+  ArrowCounterClockwise,
+  Contract,
+  Ellipsis,
+  Expand,
+  GoBackward10,
+  GoForward10,
+  Lock,
+  LockOpen,
   Pause,
-  RotateCCW,
+  Play,
 } from "../../exports/icons";
-import {
-  Slider,
-  IconButton,
-  Typography,
-  LinearProgress,
-} from "../../exports/components";
-
-import playerMachine from "./machines/player";
 import layoutMachine from "./machines/layout";
-
+import playerMachine from "./machines/player";
 import "./style.css";
 import { formatTime } from "./utils";
 
@@ -47,18 +34,29 @@ const mainProps = {
   color: "white",
 };
 
+const subProps = {
+  width: 50,
+  height: 50,
+  color: "white",
+};
+
+const svgProps = {
+  width: 28,
+  height: 28,
+  color: "white",
+};
+
 function Player() {
   const history = useHistory();
+
+  const { state } = history.location;
+  const file = state as File | undefined;
 
   const timeout = useRef<NodeJS.Timeout | null>();
   const [userActive, setUserState] = useState(true);
 
   const ref = createRef<HTMLDivElement>();
   const videoRef = createRef<HTMLVideoElement>();
-
-  const { state } = history.location;
-
-  const file = state as File | undefined;
 
   const [layout, sendLayout] = useMachine(layoutMachine, {
     actions: {
@@ -98,12 +96,6 @@ function Player() {
           const video = videoRef.current;
 
           if (file && video) {
-            console.log(
-              "can play type",
-              video.canPlayType(file.type),
-              file.type
-            );
-
             // const { name } = file;
 
             // const ffmpeg = createFFmpeg({
@@ -166,14 +158,14 @@ function Player() {
 
   const { duration, currentTime } = player.context;
 
+  const hasEnded = player.matches("ended");
   const isPaused = player.matches({ loaded: "paused" });
   const isPlaying = player.matches({ loaded: "playing" });
 
   const timeLeft = useMemo(() => {
-    return (duration * (duration - currentTime)) / duration;
+    const t = (duration * (duration - currentTime)) / duration;
+    return formatTime(t);
   }, [currentTime, duration]);
-
-  const timeLeftStr = useMemo(() => formatTime(timeLeft), [timeLeft]);
 
   const setInactiveWithTimeout = useCallback(() => {
     timeout.current = setTimeout(() => {
@@ -196,11 +188,20 @@ function Player() {
   //   }
   // }, [player]);
 
+  // const MainAction = isPaused
+  //   ? Play
+  //   : isPlaying
+  //   ? Pause
+  //   : player.matches("ended")
+  //   ? Reload
+  //   : null;
+
   return (
     <div
       ref={ref}
       className={clsx([
         "main",
+        "relative",
         isPlaying && !userActive && "user-inactive",
         layout.matches({ lock: "locked" }) && "lock",
       ])}
@@ -214,13 +215,113 @@ function Player() {
         }
       }}
     >
-      <video ref={videoRef} className="h-full w-full" />
+      <header className="header hideable lockable">
+        <div className="flex items-center space-x-3">
+          <IconButton tabIndex={-1} onClick={() => history.goBack()}>
+            <ArrowLeft {...svgProps} />
+          </IconButton>
 
-      <div className="overlay">
+          <Typography variant="h5" color="white" className="title">
+            {file?.name}
+          </Typography>
+        </div>
+
+        <div>
+          <IconButton>
+            <Ellipsis {...svgProps} />
+          </IconButton>
+        </div>
+      </header>
+
+      <main className="w-full h-full relative">
+        <video ref={videoRef} className="w-full h-full" />
+
+        <div
+          className={clsx([
+            "hideable",
+            "lockable",
+            "w-full",
+            "h-full",
+            "absolute",
+            "top-0",
+            "left-0",
+            "right-0",
+            "bottom-0",
+            "flex",
+            "items-center",
+            "space-x-4",
+            "justify-evenly",
+          ])}
+        >
+          <IconButton
+            onClick={() => {
+              sendPlayer({ type: "SEEK", value: currentTime - 10 });
+            }}
+          >
+            <GoBackward10 {...subProps} />
+          </IconButton>
+
+          <IconButton onClick={() => sendPlayer("PLAY_PAUSE")}>
+            {isPaused && <Play {...mainProps} />}
+            {isPlaying && <Pause {...mainProps} />}
+            {hasEnded && <ArrowCounterClockwise {...mainProps} />}
+          </IconButton>
+
+          <IconButton
+            onClick={() => {
+              sendPlayer({ type: "SEEK", value: currentTime + 10 });
+            }}
+          >
+            <GoForward10 {...subProps} />
+          </IconButton>
+        </div>
+      </main>
+
+      <footer className="footer hideable">
+        <div className="lockable w-full flex items-center space-x-4 px-4">
+          <Slider
+            max={duration}
+            value={currentTime}
+            onChangeCommitted={(_, value) => {
+              sendPlayer({ type: "SEEK", value: value as number });
+            }}
+          />
+
+          <Typography color="white" fontWeight="bold">
+            {timeLeft}
+          </Typography>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <IconButton onClick={() => sendLayout("LOCK.cycle")}>
+              {layout.matches({ lock: "locked" }) && <Lock {...svgProps} />}
+
+              {layout.matches({ lock: "unlocked" }) && (
+                <LockOpen {...svgProps} />
+              )}
+            </IconButton>
+          </div>
+
+          <div className="lockable">
+            <IconButton onClick={() => sendLayout("FULLSCREEN.cycle")}>
+              {layout.matches({ fullscreen: "exited" }) && (
+                <Expand {...svgProps} />
+              )}
+
+              {layout.matches({ fullscreen: "entered" }) && (
+                <Contract {...svgProps} />
+              )}
+            </IconButton>
+          </div>
+        </div>
+      </footer>
+
+      {/* <div className="overlay hideable">
         <header className="lockable flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <IconButton onClick={() => history.goBack()}>
-              <ArrowLeft color="white" />
+            <IconButton tabIndex={-1} onClick={() => history.goBack()}>
+              <ArrowBack {...svgProps} />
             </IconButton>
 
             <Typography variant="h5" color="white" className="title">
@@ -229,19 +330,11 @@ function Player() {
           </div>
 
           <div>
-            <IconButton>
-              <MoreVertical color="white" />
+            <IconButton tabIndex={-1}>
+              <EllipsisVertical {...svgProps} />
             </IconButton>
           </div>
         </header>
-
-        <main className="lockable w-min flex space-x-4 self-center">
-          <IconButton onClick={() => sendPlayer("PLAY_PAUSE")}>
-            {isPaused && <Play {...mainProps} />}
-            {isPlaying && <Pause {...mainProps} />}
-            {player.matches("ended") && <RotateCCW {...mainProps} />}
-          </IconButton>
-        </main>
 
         <footer className="space-y-2">
           <div className="lockable flex items-center space-x-4 px-4">
@@ -259,10 +352,12 @@ function Player() {
           <div className="flex items-center justify-between">
             <div>
               <IconButton onClick={() => sendLayout("LOCK.cycle")}>
-                {layout.matches({ lock: "locked" }) && <Lock color="white" />}
+                {layout.matches({ lock: "locked" }) && (
+                  <Lock {...svgProps} stroke="white" />
+                )}
 
                 {layout.matches({ lock: "unlocked" }) && (
-                  <Unlock color="white" />
+                  <Unlock {...svgProps} stroke="white" />
                 )}
               </IconButton>
             </div>
@@ -270,17 +365,17 @@ function Player() {
             <div className="lockable">
               <IconButton onClick={() => sendLayout("FULLSCREEN.cycle")}>
                 {layout.matches({ fullscreen: "exited" }) && (
-                  <Maximize color="white" />
+                  <Expand {...svgProps} fill="white" />
                 )}
 
                 {layout.matches({ fullscreen: "entered" }) && (
-                  <Minimize color="white" />
+                  <Contract {...svgProps} fill="white" />
                 )}
               </IconButton>
             </div>
           </div>
         </footer>
-      </div>
+      </div> */}
     </div>
   );
 }

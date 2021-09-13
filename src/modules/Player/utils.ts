@@ -14,8 +14,6 @@ export function formatTime(value: number) {
 
   const time = [hour > 0 ? hour : null, minute, second];
 
-  console.log(time);
-
   return pipe(
     time,
     filter((t) => t !== null),

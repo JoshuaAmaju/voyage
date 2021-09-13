@@ -1,4 +1,4 @@
-import { assign, actions, createMachine } from "xstate";
+import { assign, createMachine } from "xstate";
 
 type Context = {
   duration: number;
@@ -11,14 +11,14 @@ type States =
       context: Context;
     }
   | {
-      value: "loaded" | { loaded: "playing" | "paused" };
       context: Context;
+      value: "loaded" | { loaded: "playing" | "paused" };
     }
   | { value: "ended"; context: Context };
 
 type Events =
-  | { type: "PAUSE" | "PLAY" | "PLAY_PAUSE" }
   | { type: "ENDED" }
+  | { type: "PAUSE" | "PLAY" | "PLAY_PAUSE" }
   | { type: "SEEK" | "TIME_UPDATE"; value: number };
 
 const machine = createMachine<Context, Events, States>(
@@ -52,6 +52,8 @@ const machine = createMachine<Context, Events, States>(
         },
 
         on: {
+          ENDED: "ended",
+
           SEEK: {
             actions: ["seek", "setTime"],
           },
@@ -59,8 +61,6 @@ const machine = createMachine<Context, Events, States>(
           TIME_UPDATE: {
             actions: "setTime",
           },
-
-          ENDED: "ended",
         },
 
         states: {
@@ -68,10 +68,7 @@ const machine = createMachine<Context, Events, States>(
             entry: "pause",
 
             on: {
-              PLAY_PAUSE: {
-                target: "playing",
-                // actions: "play",
-              },
+              PLAY_PAUSE: "playing",
             },
           },
 
@@ -79,10 +76,7 @@ const machine = createMachine<Context, Events, States>(
             entry: "play",
 
             on: {
-              PLAY_PAUSE: {
-                target: "paused",
-                // actions: "pause",
-              },
+              PLAY_PAUSE: "paused",
             },
           },
         },

@@ -4,6 +4,26 @@
   background-color: #000;
 }
 
+.header,
+.footer {
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  padding: 1rem;
+  position: absolute;
+}
+
+.header {
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer {
+  bottom: 0;
+}
+
 .overlay {
   top: 0;
   left: 0;
@@ -26,9 +46,10 @@
   );
 }
 
-.user-inactive .overlay {
+.user-inactive .hideable {
   opacity: 0;
   cursor: none;
+  pointer-events: none;
 }
 
 .lock .lockable {
