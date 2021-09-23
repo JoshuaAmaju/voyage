@@ -25,8 +25,11 @@ import {
 } from "../../exports/icons";
 import layoutMachine from "./machines/layout";
 import playerMachine from "./machines/player";
+import subtitleMachine from "./machines/subtitle";
 import "./style.css";
 import { formatTime } from "./utils";
+
+import userStateMachine from "./machines/user-state";
 
 const mainProps = {
   width: 60,
@@ -58,6 +61,10 @@ function Player() {
   const ref = createRef<HTMLDivElement>();
   const videoRef = createRef<HTMLVideoElement>();
 
+  const [subtitle, sendSubtitle] = useMachine(subtitleMachine);
+
+  const [userState, sendUserState] = useMachine(userStateMachine);
+
   const [layout, sendLayout] = useMachine(layoutMachine, {
     actions: {
       exitFullscreen: () => {
@@ -73,6 +80,7 @@ function Player() {
   const [player, sendPlayer] = useMachine(playerMachine, {
     actions: {
       play: () => {
+        sendUserState("ACTIVE");
         videoRef.current?.play();
       },
       pause: () => {
@@ -156,6 +164,8 @@ function Player() {
     },
   });
 
+  const { subtitles } = subtitle.context;
+
   const { duration, currentTime } = player.context;
 
   const hasEnded = player.matches("ended");
@@ -167,18 +177,18 @@ function Player() {
     return formatTime(t);
   }, [currentTime, duration]);
 
-  const setInactiveWithTimeout = useCallback(() => {
-    timeout.current = setTimeout(() => {
-      clearTimeout(timeout.current as any);
-      timeout.current = null;
-      setUserState(false);
-    }, 4000);
-  }, []);
+  // const setInactiveWithTimeout = useCallback(() => {
+  //   timeout.current = setTimeout(() => {
+  //     clearTimeout(timeout.current as any);
+  //     timeout.current = null;
+  //     setUserState(false);
+  //   }, 4000);
+  // }, []);
 
-  useEffect(() => {
-    setInactiveWithTimeout();
-    return () => clearTimeout(timeout.current as any);
-  }, [setInactiveWithTimeout]);
+  // useEffect(() => {
+  //   setInactiveWithTimeout();
+  //   return () => clearTimeout(timeout.current as any);
+  // }, [setInactiveWithTimeout]);
 
   // useEffect(() => {
   //   if (player.changed && player.matches({ loaded: "paused" })) {
@@ -202,17 +212,12 @@ function Player() {
       className={clsx([
         "main",
         "relative",
-        isPlaying && !userActive && "user-inactive",
         layout.matches({ lock: "locked" }) && "lock",
+        isPlaying && !userState.matches("active") && "user-inactive",
       ])}
       onMouseMove={() => {
         if (isPaused) return;
-
-        if (!userActive) {
-          clearTimeout(timeout.current as any);
-          setInactiveWithTimeout();
-          setUserState(true);
-        }
+        sendUserState("ACTIVE");
       }}
     >
       <header className="header hideable lockable">
@@ -234,7 +239,11 @@ function Player() {
       </header>
 
       <main className="w-full h-full relative">
-        <video ref={videoRef} className="w-full h-full" />
+        <video ref={videoRef} className="w-full h-full">
+          {/* {subtitles.map((subtitle) => {
+            return <track></track>;
+          })} */}
+        </video>
 
         <div
           className={clsx([

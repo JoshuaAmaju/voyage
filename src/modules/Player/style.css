@@ -46,6 +46,10 @@
   );
 }
 
+.hideable {
+  transition: all 0.25s;
+}
+
 .user-inactive .hideable {
   opacity: 0;
   cursor: none;
