@@ -1,0 +1,72 @@
+.main {
+  height: 100%;
+  position: relative;
+  background-color: #000;
+}
+
+.header,
+.footer {
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  padding: 1rem;
+  position: absolute;
+}
+
+.header {
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer {
+  bottom: 0;
+}
+
+.overlay {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  padding: 0.5rem;
+  position: absolute;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.5s ease-in-out;
+  background: linear-gradient(
+    #000000c7,
+    #00000070,
+    #0000002e,
+    transparent 10% 90%,
+    #0000002e,
+    #00000070,
+    #000000
+  );
+}
+
+.hideable {
+  transition: all 0.25s;
+}
+
+.user-inactive .hideable {
+  opacity: 0;
+  cursor: none;
+  pointer-events: none;
+}
+
+.lock .lockable {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.title {
+  max-width: 80%;
+  overflow: hidden;
+  display: -webkit-box;
+  word-break: break-all;
+  -webkit-line-clamp: 1;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+}
