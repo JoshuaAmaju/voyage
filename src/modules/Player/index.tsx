@@ -248,8 +248,10 @@ function Player() {
         </video>
 
         <div
-          onClick={() => {
-            sendUserState("CYCLE");
+          onClick={({ target, currentTarget }) => {
+            if (target === currentTarget) {
+              sendUserState("CYCLE");
+            }
           }}
           className={clsx([
             "w-full",
@@ -262,6 +264,11 @@ function Player() {
           ])}
         >
           <div
+            onClick={({ target, currentTarget }) => {
+              if (target === currentTarget) {
+                sendUserState("CYCLE");
+              }
+            }}
             className={clsx([
               "hideable",
               "lockable",
