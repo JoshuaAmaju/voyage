@@ -65,6 +65,8 @@ function Player() {
 
   const [userState, sendUserState] = useMachine(userStateMachine);
 
+  console.log(userState.value, userState.event);
+
   const [layout, sendLayout] = useMachine(layoutMachine, {
     actions: {
       exitFullscreen: () => {
@@ -209,16 +211,16 @@ function Player() {
   return (
     <div
       ref={ref}
-      className={clsx([
-        "main",
-        "relative",
-        layout.matches({ lock: "locked" }) && "lock",
-        isPlaying && !userState.matches("active") && "user-inactive",
-      ])}
       onMouseMove={() => {
         if (isPaused) return;
         sendUserState("ACTIVE");
       }}
+      className={clsx([
+        "main",
+        "relative",
+        layout.matches({ lock: "locked" }) && "lock",
+        !userState.matches("active") && "user-inactive",
+      ])}
     >
       <header className="header hideable lockable">
         <div className="flex items-center space-x-3">
@@ -246,9 +248,10 @@ function Player() {
         </video>
 
         <div
+          onClick={() => {
+            sendUserState("CYCLE");
+          }}
           className={clsx([
-            "hideable",
-            "lockable",
             "w-full",
             "h-full",
             "absolute",
@@ -256,33 +259,42 @@ function Player() {
             "left-0",
             "right-0",
             "bottom-0",
-            "flex",
-            "items-center",
-            "space-x-4",
-            "justify-evenly",
           ])}
         >
-          <IconButton
-            onClick={() => {
-              sendPlayer({ type: "SEEK", value: currentTime - 10 });
-            }}
+          <div
+            className={clsx([
+              "hideable",
+              "lockable",
+              "w-full",
+              "h-full",
+              "flex",
+              "items-center",
+              "space-x-4",
+              "justify-evenly",
+            ])}
           >
-            <GoBackward10 {...subProps} />
-          </IconButton>
+            <IconButton
+              onClick={() => {
+                sendPlayer({ type: "SEEK", value: currentTime - 10 });
+              }}
+            >
+              <GoBackward10 {...subProps} />
+            </IconButton>
 
-          <IconButton onClick={() => sendPlayer("PLAY_PAUSE")}>
-            {isPaused && <Play {...mainProps} />}
-            {isPlaying && <Pause {...mainProps} />}
-            {hasEnded && <ArrowCounterClockwise {...mainProps} />}
-          </IconButton>
+            <IconButton onClick={() => sendPlayer("PLAY_PAUSE")}>
+              {isPaused && <Play {...mainProps} />}
+              {isPlaying && <Pause {...mainProps} />}
+              {hasEnded && <ArrowCounterClockwise {...mainProps} />}
+            </IconButton>
 
-          <IconButton
-            onClick={() => {
-              sendPlayer({ type: "SEEK", value: currentTime + 10 });
-            }}
-          >
-            <GoForward10 {...subProps} />
-          </IconButton>
+            <IconButton
+              onClick={() => {
+                sendPlayer({ type: "SEEK", value: currentTime + 10 });
+              }}
+            >
+              <GoForward10 {...subProps} />
+            </IconButton>
+          </div>
         </div>
       </main>
 
@@ -325,66 +337,6 @@ function Player() {
           </div>
         </div>
       </footer>
-
-      {/* <div className="overlay hideable">
-        <header className="lockable flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <IconButton tabIndex={-1} onClick={() => history.goBack()}>
-              <ArrowBack {...svgProps} />
-            </IconButton>
-
-            <Typography variant="h5" color="white" className="title">
-              {file?.name}
-            </Typography>
-          </div>
-
-          <div>
-            <IconButton tabIndex={-1}>
-              <EllipsisVertical {...svgProps} />
-            </IconButton>
-          </div>
-        </header>
-
-        <footer className="space-y-2">
-          <div className="lockable flex items-center space-x-4 px-4">
-            <Slider
-              max={duration}
-              value={currentTime}
-              onChangeCommitted={(_, value) => {
-                sendPlayer({ type: "SEEK", value: value as number });
-              }}
-            />
-
-            <Typography color="white">{timeLeftStr}</Typography>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <IconButton onClick={() => sendLayout("LOCK.cycle")}>
-                {layout.matches({ lock: "locked" }) && (
-                  <Lock {...svgProps} stroke="white" />
-                )}
-
-                {layout.matches({ lock: "unlocked" }) && (
-                  <Unlock {...svgProps} stroke="white" />
-                )}
-              </IconButton>
-            </div>
-
-            <div className="lockable">
-              <IconButton onClick={() => sendLayout("FULLSCREEN.cycle")}>
-                {layout.matches({ fullscreen: "exited" }) && (
-                  <Expand {...svgProps} fill="white" />
-                )}
-
-                {layout.matches({ fullscreen: "entered" }) && (
-                  <Contract {...svgProps} fill="white" />
-                )}
-              </IconButton>
-            </div>
-          </div>
-        </footer>
-      </div> */}
     </div>
   );
 }
