@@ -27,7 +27,7 @@
 }
 
 .hideable {
-  transition: all 0.25s;
+  transition: opacity 0.25s;
 }
 
 .user-inactive .hideable {

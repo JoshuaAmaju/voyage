@@ -9,6 +9,11 @@ import {
   useState,
 } from "react";
 import { useHistory } from "react-router-dom";
+import PopoverState, {
+  bindPopover,
+  bindTrigger,
+} from "material-ui-popup-state";
+import { List, ListItem, Popover, PopoverProps } from "@material-ui/core";
 import { IconButton, Slider, Typography } from "../../exports/components";
 import {
   ArrowLeft,
@@ -30,6 +35,7 @@ import "./style.css";
 import { formatTime } from "./utils";
 
 import userStateMachine from "./machines/user-state";
+import { flow } from "fp-ts/lib/function";
 
 const mainProps = {
   width: 60,
@@ -47,6 +53,20 @@ const svgProps = {
   width: 28,
   height: 28,
   color: "white",
+};
+
+const overflowAnchor: Record<
+  string,
+  PopoverProps["anchorOrigin"] | PopoverProps["transformOrigin"]
+> = {
+  anchorOrigin: {
+    vertical: "top",
+    horizontal: "left",
+  },
+  transformOrigin: {
+    vertical: "top",
+    horizontal: "right",
+  },
 };
 
 function Player() {
@@ -179,34 +199,16 @@ function Player() {
     return formatTime(t);
   }, [currentTime, duration]);
 
-  // const setInactiveWithTimeout = useCallback(() => {
-  //   timeout.current = setTimeout(() => {
-  //     clearTimeout(timeout.current as any);
-  //     timeout.current = null;
-  //     setUserState(false);
-  //   }, 4000);
-  // }, []);
-
-  // useEffect(() => {
-  //   setInactiveWithTimeout();
-  //   return () => clearTimeout(timeout.current as any);
-  // }, [setInactiveWithTimeout]);
-
-  // useEffect(() => {
-  //   if (player.changed && player.matches({ loaded: "paused" })) {
-  //     clearTimeout(timeout.current as any);
-  //     timeout.current = null;
-  //     setUserState(true);
-  //   }
-  // }, [player]);
-
-  // const MainAction = isPaused
-  //   ? Play
-  //   : isPlaying
-  //   ? Pause
-  //   : player.matches("ended")
-  //   ? Reload
-  //   : null;
+  const menus = [
+    {
+      action: () => {},
+      label: "Add subtitle",
+    },
+    {
+      action: () => {},
+      label: "About",
+    },
+  ];
 
   return (
     <div
@@ -234,9 +236,38 @@ function Player() {
         </div>
 
         <div>
-          <IconButton>
-            <Ellipsis {...svgProps} />
-          </IconButton>
+          <PopoverState variant="popover">
+            {(state) => {
+              return (
+                <>
+                  <IconButton {...bindTrigger(state)}>
+                    <Ellipsis {...svgProps} />
+                  </IconButton>
+
+                  <Popover
+                    {...overflowAnchor}
+                    {...bindPopover(state)}
+                    classes={{ paper: "px-3" }}
+                  >
+                    <List>
+                      {menus.map(({ label, action }, i) => {
+                        return (
+                          <ListItem
+                            button
+                            key={i}
+                            onClick={flow(action, state.close)}
+                            classes={{ root: "flex space-x-2" }}
+                          >
+                            {label}
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  </Popover>
+                </>
+              );
+            }}
+          </PopoverState>
         </div>
       </header>
 
