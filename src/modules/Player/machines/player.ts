@@ -1,6 +1,8 @@
 import { assign, createMachine } from "xstate";
 
 type Context = {
+  volume: number;
+  muted: boolean;
   duration: number;
   currentTime: number;
 };
@@ -19,14 +21,16 @@ type States =
 type Events =
   | { type: "ENDED" }
   | { type: "PAUSE" | "PLAY" | "PLAY_PAUSE" }
-  | { type: "SEEK" | "TIME_UPDATE"; value: number };
+  | { type: "SEEK" | "TIME_UPDATE" | "VOLUME"; value: number };
 
 const machine = createMachine<Context, Events, States>(
   {
     initial: "load",
 
     context: {
+      volume: 1,
       duration: 0,
+      muted: false,
       currentTime: 0,
     },
 
@@ -45,7 +49,7 @@ const machine = createMachine<Context, Events, States>(
       },
 
       loaded: {
-        initial: "playing",
+        initial: "paused",
 
         invoke: {
           src: "watcher",
@@ -54,6 +58,10 @@ const machine = createMachine<Context, Events, States>(
         on: {
           ENDED: "ended",
 
+          PAUSE: ".paused",
+
+          PLAY: ".playing",
+
           SEEK: {
             actions: ["seek", "setTime"],
           },
@@ -61,29 +69,42 @@ const machine = createMachine<Context, Events, States>(
           TIME_UPDATE: {
             actions: "setTime",
           },
+
+          VOLUME: {
+            actions: ["volume", "setVolume"],
+          },
         },
 
         states: {
           paused: {
-            entry: "pause",
+            // entry: "pause",
 
             on: {
-              PLAY_PAUSE: "playing",
+              PLAY_PAUSE: {
+                actions: "play",
+                target: "playing",
+              },
             },
           },
 
           playing: {
-            entry: "play",
+            // entry: "play",
 
             on: {
-              PLAY_PAUSE: "paused",
+              PLAY_PAUSE: {
+                target: "paused",
+                actions: "pause",
+              },
             },
           },
         },
       },
       ended: {
         on: {
-          PLAY_PAUSE: "loaded.playing",
+          PLAY_PAUSE: {
+            target: "loaded.playing",
+            actions: "play",
+          },
         },
       },
     },
@@ -92,6 +113,9 @@ const machine = createMachine<Context, Events, States>(
     actions: {
       setTime: assign({
         currentTime: (_, { value }: any) => value,
+      }),
+      setVolume: assign({
+        volume: (_, { value }: any) => value,
       }),
     },
   }
