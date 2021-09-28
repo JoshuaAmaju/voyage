@@ -125,6 +125,12 @@ function Player() {
         const video = videoRef.current;
         if (video) video.muted = !video.muted;
       },
+      playing: () => {
+        sendUserState("RESUME");
+      },
+      paused: () => {
+        sendUserState("SUSPEND");
+      },
     },
     services: {
       load: () => {
@@ -253,7 +259,6 @@ function Player() {
     <div
       ref={ref}
       onPointerMove={({ target, currentTarget }) => {
-        // console.log("pointer move", target, currentTarget);
         if (isPaused && target !== currentTarget) return;
         sendUserState("ACTIVE");
       }}

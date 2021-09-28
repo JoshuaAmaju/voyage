@@ -77,7 +77,7 @@ const machine = createMachine<Context, Events, States>(
 
         states: {
           paused: {
-            // entry: "pause",
+            entry: "paused",
 
             on: {
               PLAY_PAUSE: {
@@ -88,7 +88,7 @@ const machine = createMachine<Context, Events, States>(
           },
 
           playing: {
-            // entry: "play",
+            entry: "playing",
 
             on: {
               PLAY_PAUSE: {
