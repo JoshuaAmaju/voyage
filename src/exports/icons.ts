@@ -13,6 +13,8 @@ import { ReactComponent as LockOpen } from "../assets/sf-symbols/lock.open.fill.
 import { ReactComponent as Pause } from "../assets/sf-symbols/pause.fill.svg";
 import { ReactComponent as Play } from "../assets/sf-symbols/play.fill.svg";
 import { ReactComponent as Plus } from "../assets/sf-symbols/plus.svg";
+import { ReactComponent as SpeakerSlash } from "../assets/sf-symbols/speaker.slash.fill.svg";
+import { ReactComponent as SpeakerWave2 } from "../assets/sf-symbols/speaker.wave.2.fill.svg";
 
 export {
   MoreVert as Ellipsis,
@@ -29,4 +31,6 @@ export {
   GoBackward10,
   GoForward10,
   ArrowLeft,
+  SpeakerSlash,
+  SpeakerWave2,
 };

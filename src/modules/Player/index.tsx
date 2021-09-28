@@ -1,23 +1,24 @@
+import {
+  List,
+  ListItem,
+  Popover,
+  PopoverProps,
+  Stack,
+} from "@material-ui/core";
 import { useMachine } from "@xstate/react";
 import clsx from "clsx";
-import {
-  createRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { useHistory } from "react-router-dom";
+import { flow } from "fp-ts/lib/function";
 import PopoverState, {
   bindPopover,
   bindTrigger,
 } from "material-ui-popup-state";
-import { List, ListItem, Popover, PopoverProps } from "@material-ui/core";
+import { createRef, useMemo, useRef, useState } from "react";
+import { Helmet } from "react-helmet";
+import { useHistory } from "react-router-dom";
 import { IconButton, Slider, Typography } from "../../exports/components";
 import {
-  ArrowLeft,
   ArrowCounterClockwise,
+  ArrowLeft,
   Contract,
   Ellipsis,
   Expand,
@@ -27,15 +28,15 @@ import {
   LockOpen,
   Pause,
   Play,
+  SpeakerSlash,
+  SpeakerWave2,
 } from "../../exports/icons";
 import layoutMachine from "./machines/layout";
 import playerMachine from "./machines/player";
 import subtitleMachine from "./machines/subtitle";
+import userStateMachine from "./machines/user-state";
 import "./style.css";
 import { formatTime } from "./utils";
-
-import userStateMachine from "./machines/user-state";
-import { flow } from "fp-ts/lib/function";
 
 const mainProps = {
   width: 60,
@@ -75,9 +76,6 @@ function Player() {
   const { state } = history.location;
   const file = state as File | undefined;
 
-  const timeout = useRef<NodeJS.Timeout | null>();
-  const [userActive, setUserState] = useState(true);
-
   const ref = createRef<HTMLDivElement>();
   const videoRef = createRef<HTMLVideoElement>();
 
@@ -102,7 +100,7 @@ function Player() {
   const [player, sendPlayer] = useMachine(playerMachine, {
     actions: {
       play: () => {
-        sendUserState("ACTIVE");
+        // sendUserState("ACTIVE");
         videoRef.current?.play();
       },
       pause: () => {
@@ -118,6 +116,14 @@ function Player() {
             video.currentTime = value;
           }
         }
+      },
+      volume: (_, { value }: any) => {
+        const video = videoRef.current;
+        if (video) video.volume = value;
+      },
+      mute: () => {
+        const video = videoRef.current;
+        if (video) video.muted = !video.muted;
       },
     },
     services: {
@@ -155,6 +161,7 @@ function Player() {
 
             video.addEventListener("loadeddata", () => {
               resolve({ duration: video.duration });
+              video.play();
             });
 
             video.addEventListener("error", reject);
@@ -169,18 +176,32 @@ function Player() {
       watcher: () => (callback) => {
         const video = videoRef.current;
 
+        const onPlay = () => callback("PLAY");
+
+        const onPause = () => callback("PAUSE");
+
         const onEnded = () => callback("ENDED");
 
         const onTimeUpdate = () => {
           callback({ type: "TIME_UPDATE", value: video?.currentTime });
         };
 
+        const onVolumeChange = () => {
+          callback({ type: "VOLUME", value: video?.volume });
+        };
+
+        video?.addEventListener("play", onPlay);
+        video?.addEventListener("pause", onPause);
         video?.addEventListener("ended", onEnded);
         video?.addEventListener("timeupdate", onTimeUpdate);
+        video?.addEventListener("volumechange", onVolumeChange);
 
         return () => {
+          video?.removeEventListener("play", onPlay);
+          video?.removeEventListener("pause", onPause);
           video?.removeEventListener("ended", onEnded);
           video?.removeEventListener("timeupdate", onTimeUpdate);
+          video?.removeEventListener("volumechange", onVolumeChange);
         };
       },
     },
@@ -188,7 +209,7 @@ function Player() {
 
   const { subtitles } = subtitle.context;
 
-  const { duration, currentTime } = player.context;
+  const { duration, volume, currentTime } = player.context;
 
   const hasEnded = player.matches("ended");
   const isPaused = player.matches({ loaded: "paused" });
@@ -210,20 +231,43 @@ function Player() {
     },
   ];
 
+  // useLayoutEffect(() => {
+  //   const parent = ref.current;
+
+  //   const onMouseMove = () => sendUserState("ACTIVE");
+
+  //   if (userState.matches("active")) {
+  //     parent?.removeEventListener("mousemove", onMouseMove);
+  //   } else {
+  //     parent?.addEventListener("mousemove", onMouseMove, {
+  //       passive: true,
+  //     });
+  //   }
+
+  //   return () => {
+  //     parent?.removeEventListener("mousemove", onMouseMove);
+  //   };
+  // }, [ref, sendUserState, userState]);
+
   return (
     <div
       ref={ref}
-      onMouseMove={() => {
-        if (isPaused) return;
+      onPointerMove={({ target, currentTarget }) => {
+        // console.log("pointer move", target, currentTarget);
+        if (isPaused && target !== currentTarget) return;
         sendUserState("ACTIVE");
       }}
       className={clsx([
         "main",
         "relative",
         layout.matches({ lock: "locked" }) && "lock",
-        !userState.matches("active") && "user-inactive",
+        userState.matches("inactive") && "user-inactive",
       ])}
     >
+      <Helmet>
+        <title>Voyage | {file?.name}</title>
+      </Helmet>
+
       <header className="header hideable lockable">
         <div className="flex items-center space-x-3">
           <IconButton tabIndex={-1} onClick={() => history.goBack()}>
@@ -307,8 +351,8 @@ function Player() {
               "h-full",
               "flex",
               "items-center",
-              "space-x-4",
               "justify-evenly",
+              "space-x-4",
             ])}
           >
             <IconButton
@@ -337,7 +381,16 @@ function Player() {
       </main>
 
       <footer className="footer hideable">
-        <div className="lockable w-full flex items-center space-x-4 px-4">
+        <div
+          className={clsx([
+            "lockable",
+            "w-full",
+            "flex",
+            "items-center",
+            "space-x-4",
+            "px-4",
+          ])}
+        >
           <Slider
             max={duration}
             value={currentTime}
@@ -362,7 +415,65 @@ function Player() {
             </IconButton>
           </div>
 
-          <div className="lockable">
+          <div
+            className={clsx(["lockable", "flex", "items-center", "space-x-3"])}
+          >
+            <PopoverState variant="popover">
+              {(state) => {
+                return (
+                  <>
+                    <IconButton
+                      {...bindTrigger(state)}
+                      onClick={(e) => {
+                        sendUserState("SUSPEND");
+                        state.toggle(e);
+                      }}
+                    >
+                      {volume > 0 ? (
+                        <SpeakerWave2 {...svgProps} />
+                      ) : (
+                        <SpeakerSlash {...svgProps} />
+                      )}
+                    </IconButton>
+
+                    <Popover
+                      {...bindPopover(state)}
+                      classes={{ paper: "px-3 py-6" }}
+                      onClose={() => {
+                        state.close();
+                        sendUserState("RESUME");
+                      }}
+                      anchorOrigin={{
+                        vertical: "top",
+                        horizontal: "center",
+                      }}
+                      transformOrigin={{
+                        vertical: "bottom",
+                        horizontal: "center",
+                      }}
+                    >
+                      <Stack sx={{ height: 120 }}>
+                        <Slider
+                          min={0}
+                          max={1}
+                          step={0.1}
+                          value={volume}
+                          orientation="vertical"
+                          classes={{ track: "h-full" }}
+                          onChange={(_, value) => {
+                            sendPlayer({
+                              type: "VOLUME",
+                              value: value as number,
+                            });
+                          }}
+                        />
+                      </Stack>
+                    </Popover>
+                  </>
+                );
+              }}
+            </PopoverState>
+
             <IconButton onClick={() => sendLayout("FULLSCREEN.cycle")}>
               {layout.matches({ fullscreen: "exited" }) && (
                 <Expand {...svgProps} />

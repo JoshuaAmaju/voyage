@@ -1,5 +1,6 @@
 import { createRef, useCallback } from "react";
 import clsx from "clsx";
+import { Helmet } from "react-helmet";
 import { Typography, Button } from "../exports/components";
 import { useHistory } from "react-router-dom";
 
@@ -23,6 +24,10 @@ function Home() {
         "space-y-2",
       ])}
     >
+      <Helmet>
+        <title>Voyage | Home</title>
+      </Helmet>
+
       <Typography variant="h4">Get started</Typography>
 
       <Button variant="contained" color="primary" onClick={onClick}>

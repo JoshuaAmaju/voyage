@@ -50,3 +50,7 @@
   text-overflow: ellipsis;
   -webkit-box-orient: vertical;
 }
+
+.volume-popover {
+  min-height: 10rem !important;
+}
