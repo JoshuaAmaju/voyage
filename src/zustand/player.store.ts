@@ -1,7 +1,7 @@
 import create from "zustand";
 
 type Context = {
-  file?: File;
+  file?: File | null;
   currentTime: number;
 };
 

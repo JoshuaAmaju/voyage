@@ -2,11 +2,14 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
+import Manager from "./context/Manager";
 import reportWebVitals from "./reportWebVitals";
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <Manager>
+      <App />
+    </Manager>
   </React.StrictMode>,
   document.getElementById("root")
 );
