@@ -3,11 +3,14 @@ import clsx from "clsx";
 import { Helmet } from "react-helmet";
 import { Typography, Button } from "../exports/components";
 import { useHistory } from "react-router-dom";
+import usePlayerStore from "../zustand/player.store";
 
 function Home() {
   const history = useHistory();
 
   const ref = createRef<HTMLInputElement>();
+
+  const setPlayer = usePlayerStore(({ set }) => set);
 
   const onClick = useCallback(() => {
     ref.current?.click();
@@ -44,6 +47,7 @@ function Home() {
           if (files) {
             const [file] = files;
             history.push("/player", file);
+            setPlayer({ file });
           }
         }}
       />
