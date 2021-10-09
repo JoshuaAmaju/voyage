@@ -1,3 +1,4 @@
+import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import {
   List,
   ListItem,
@@ -12,7 +13,8 @@ import PopoverState, {
   bindPopover,
   bindTrigger,
 } from "material-ui-popup-state";
-import { createRef, useMemo, useRef, useState } from "react";
+import { createRef, useEffect, useMemo, useRef, useState } from "react";
+import VTTConverter from "srt-webvtt";
 import { Helmet } from "react-helmet";
 import { useHistory } from "react-router-dom";
 import { IconButton, Slider, Typography } from "../../exports/components";
@@ -79,9 +81,13 @@ function Player() {
   const ref = createRef<HTMLDivElement>();
   const videoRef = createRef<HTMLVideoElement>();
 
+  const subtitlePickerRef = createRef<HTMLInputElement>();
+
   const [subtitle, sendSubtitle] = useMachine(subtitleMachine);
 
   const [userState, sendUserState] = useMachine(userStateMachine);
+
+  const [cue, setCue] = useState<string | null>();
 
   console.log(userState.value, userState.event);
 
@@ -126,10 +132,10 @@ function Player() {
         if (video) video.muted = !video.muted;
       },
       playing: () => {
-        sendUserState("RESUME");
+        // sendUserState("RESUME");
       },
       paused: () => {
-        sendUserState("SUSPEND");
+        // sendUserState("SUSPEND");
       },
     },
     services: {
@@ -154,16 +160,38 @@ function Player() {
             //   "4096",
             //   "-i",
             //   name,
-            //   "-c",
-            //   "copy",
+            //   // "-vf",
+            //   // "fps=1/1",
             //   "-preset",
             //   "fast",
-            //   "output.mp4"
+            //   "frame/out%d.jpg"
             // );
 
             // const data = ffmpeg.FS("readFile", name);
 
-            // ffmpeg.FS('unlink', name);
+            // const data = new Array(60).fill(0).map((_, i) => {
+            //   return ffmpeg.FS("readFile", `out${i + 1}.jpg`);
+            // });
+
+            // data.forEach((d) => {
+            //   const img = document.createElement("img");
+
+            //   img.src = URL.createObjectURL(
+            //     new Blob([d.buffer], { type: "image/png" } /* (1) */)
+            //   );
+
+            //   img.className = "img";
+
+            //   document.body.appendChild(img);
+            // });
+
+            // console.log(data);
+
+            // data.forEach((_, i) => {
+            //   ffmpeg.FS("unlink", `out${i + 1}.jpg`);
+            // });
+
+            // ffmpeg.FS("unlink", name);
 
             video.addEventListener("loadeddata", () => {
               resolve({ duration: video.duration });
@@ -183,9 +211,7 @@ function Player() {
         const video = videoRef.current;
 
         const onPlay = () => callback("PLAY");
-
         const onPause = () => callback("PAUSE");
-
         const onEnded = () => callback("ENDED");
 
         const onTimeUpdate = () => {
@@ -213,7 +239,7 @@ function Player() {
     },
   });
 
-  const { subtitles } = subtitle.context;
+  const { current, subtitles } = subtitle.context;
 
   const { duration, volume, currentTime } = player.context;
 
@@ -228,14 +254,51 @@ function Player() {
 
   const menus = [
     {
-      action: () => {},
+      action: () => {
+        subtitlePickerRef.current?.click();
+      },
       label: "Add subtitle",
+    },
+    {
+      action: () => {},
+      label: "Video Info",
     },
     {
       action: () => {},
       label: "About",
     },
   ];
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (video) {
+      const tracks = [...video.textTracks];
+
+      const track = tracks.find((track) => track.id === current);
+
+      if (track) {
+        // console.log(track.activeCues);
+
+        track.addEventListener("cuechange", (e) => {
+          const { activeCues } = track;
+
+          // console.log("cues", activeCues);
+
+          if (activeCues) {
+            const [activeCue] = [...activeCues];
+            const html = (activeCue as VTTCue)?.getCueAsHTML();
+            const cue = html?.firstChild;
+            // console.dir(cue?.textContent);
+            // console.log("cue change", cue, (cue as HTMLElement)?.innerHTML);
+            setCue(cue?.textContent);
+          }
+        });
+
+        track.mode = "hidden";
+      }
+    }
+  }, [current, subtitles, videoRef]);
 
   // useLayoutEffect(() => {
   //   const parent = ref.current;
@@ -258,10 +321,10 @@ function Player() {
   return (
     <div
       ref={ref}
-      onPointerMove={({ target, currentTarget }) => {
-        if (isPaused && target !== currentTarget) return;
-        sendUserState("ACTIVE");
-      }}
+      // onPointerMove={({ target, currentTarget }) => {
+      //   if (target !== currentTarget) return;
+      //   sendUserState("ACTIVE");
+      // }}
       className={clsx([
         "main",
         "relative",
@@ -289,7 +352,13 @@ function Player() {
             {(state) => {
               return (
                 <>
-                  <IconButton {...bindTrigger(state)}>
+                  <IconButton
+                    {...bindTrigger(state)}
+                    onClick={(e) => {
+                      sendUserState("SUSPEND");
+                      state.toggle(e);
+                    }}
+                  >
                     <Ellipsis {...svgProps} />
                   </IconButton>
 
@@ -297,6 +366,10 @@ function Player() {
                     {...overflowAnchor}
                     {...bindPopover(state)}
                     classes={{ paper: "px-3" }}
+                    onClose={() => {
+                      state.close();
+                      sendUserState("RESUME");
+                    }}
                   >
                     <List>
                       {menus.map(({ label, action }, i) => {
@@ -321,13 +394,38 @@ function Player() {
       </header>
 
       <main className="w-full h-full relative">
+        <input
+          hidden
+          type="file"
+          name="subtitle-picker"
+          ref={subtitlePickerRef}
+          onChange={async ({ target: { files } }) => {
+            if (files) {
+              const [file] = files;
+              const vttConverter = new VTTConverter(file);
+              const url = await vttConverter.getURL();
+              sendSubtitle({ url, type: "ADD" });
+            }
+          }}
+        />
+
         <video ref={videoRef} className="w-full h-full">
-          {/* {subtitles.map((subtitle) => {
-            return <track></track>;
-          })} */}
+          {[...subtitles.keys()].map((id) => (
+            <track
+              id={id}
+              key={id}
+              kind="subtitles"
+              src={subtitles.get(id)}
+              default={id === current}
+            />
+          ))}
         </video>
 
         <div
+          onPointerMove={({ target, currentTarget }) => {
+            if (target !== currentTarget) return;
+            sendUserState("ACTIVE");
+          }}
           onClick={({ target, currentTarget }) => {
             if (target === currentTarget) {
               sendUserState("CYCLE");
@@ -341,6 +439,7 @@ function Player() {
             "left-0",
             "right-0",
             "bottom-0",
+            userState.matches("inactive") && "hideable--cursor",
           ])}
         >
           <div
@@ -385,109 +484,120 @@ function Player() {
         </div>
       </main>
 
-      <footer className="footer hideable">
-        <div
-          className={clsx([
-            "lockable",
-            "w-full",
-            "flex",
-            "items-center",
-            "space-x-4",
-            "px-4",
-          ])}
-        >
-          <Slider
-            max={duration}
-            value={currentTime}
-            onChangeCommitted={(_, value) => {
-              sendPlayer({ type: "SEEK", value: value as number });
-            }}
-          />
-
-          <Typography color="white" fontWeight="bold">
-            {timeLeft}
-          </Typography>
+      <footer className="footer space-y-3">
+        <div className="captions-container">
+          {cue && <p className="caption">{cue}</p>}
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <IconButton onClick={() => sendLayout("LOCK.cycle")}>
-              {layout.matches({ lock: "locked" }) && <Lock {...svgProps} />}
+        <div className="hideable">
+          <div
+            className={clsx([
+              "lockable",
+              "w-full",
+              "flex",
+              "items-center",
+              "space-x-4",
+              "px-4",
+            ])}
+          >
+            <Slider
+              max={duration}
+              value={currentTime}
+              onChangeCommitted={(_, value) => {
+                sendPlayer({ type: "SEEK", value: value as number });
+              }}
+            />
 
-              {layout.matches({ lock: "unlocked" }) && (
-                <LockOpen {...svgProps} />
-              )}
-            </IconButton>
+            <Typography color="white" fontWeight="bold">
+              {timeLeft}
+            </Typography>
           </div>
 
-          <div
-            className={clsx(["lockable", "flex", "items-center", "space-x-3"])}
-          >
-            <PopoverState variant="popover">
-              {(state) => {
-                return (
-                  <>
-                    <IconButton
-                      {...bindTrigger(state)}
-                      onClick={(e) => {
-                        sendUserState("SUSPEND");
-                        state.toggle(e);
-                      }}
-                    >
-                      {volume > 0 ? (
-                        <SpeakerWave2 {...svgProps} />
-                      ) : (
-                        <SpeakerSlash {...svgProps} />
-                      )}
-                    </IconButton>
+          <div className="flex items-center justify-between">
+            <div>
+              <IconButton onClick={() => sendLayout("LOCK.cycle")}>
+                {layout.matches({ lock: "locked" }) && <Lock {...svgProps} />}
 
-                    <Popover
-                      {...bindPopover(state)}
-                      classes={{ paper: "px-3 py-6" }}
-                      onClose={() => {
-                        state.close();
-                        sendUserState("RESUME");
-                      }}
-                      anchorOrigin={{
-                        vertical: "top",
-                        horizontal: "center",
-                      }}
-                      transformOrigin={{
-                        vertical: "bottom",
-                        horizontal: "center",
-                      }}
-                    >
-                      <Stack sx={{ height: 120 }}>
-                        <Slider
-                          min={0}
-                          max={1}
-                          step={0.1}
-                          value={volume}
-                          orientation="vertical"
-                          classes={{ track: "h-full" }}
-                          onChange={(_, value) => {
-                            sendPlayer({
-                              type: "VOLUME",
-                              value: value as number,
-                            });
-                          }}
-                        />
-                      </Stack>
-                    </Popover>
-                  </>
-                );
-              }}
-            </PopoverState>
+                {layout.matches({ lock: "unlocked" }) && (
+                  <LockOpen {...svgProps} />
+                )}
+              </IconButton>
+            </div>
 
-            <IconButton onClick={() => sendLayout("FULLSCREEN.cycle")}>
-              {layout.matches({ fullscreen: "exited" }) && (
-                <Expand {...svgProps} />
-              )}
+            <div
+              className={clsx([
+                "lockable",
+                "flex",
+                "items-center",
+                "space-x-3",
+              ])}
+            >
+              <PopoverState variant="popover">
+                {(state) => {
+                  return (
+                    <>
+                      <IconButton
+                        {...bindTrigger(state)}
+                        onClick={(e) => {
+                          sendUserState("SUSPEND");
+                          state.toggle(e);
+                        }}
+                      >
+                        {volume > 0 ? (
+                          <SpeakerWave2 {...svgProps} />
+                        ) : (
+                          <SpeakerSlash {...svgProps} />
+                        )}
+                      </IconButton>
 
-              {layout.matches({ fullscreen: "entered" }) && (
-                <Contract {...svgProps} />
-              )}
-            </IconButton>
+                      <Popover
+                        {...bindPopover(state)}
+                        classes={{ paper: "px-3 py-6" }}
+                        onClose={() => {
+                          state.close();
+                          sendUserState("RESUME");
+                        }}
+                        anchorOrigin={{
+                          vertical: "top",
+                          horizontal: "center",
+                        }}
+                        transformOrigin={{
+                          vertical: "bottom",
+                          horizontal: "center",
+                        }}
+                      >
+                        <Stack sx={{ height: 120 }}>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.1}
+                            value={volume}
+                            orientation="vertical"
+                            classes={{ track: "h-full" }}
+                            onChange={(_, value) => {
+                              sendPlayer({
+                                type: "VOLUME",
+                                value: value as number,
+                              });
+                            }}
+                          />
+                        </Stack>
+                      </Popover>
+                    </>
+                  );
+                }}
+              </PopoverState>
+
+              <IconButton onClick={() => sendLayout("FULLSCREEN.cycle")}>
+                {layout.matches({ fullscreen: "exited" }) && (
+                  <Expand {...svgProps} />
+                )}
+
+                {layout.matches({ fullscreen: "entered" }) && (
+                  <Contract {...svgProps} />
+                )}
+              </IconButton>
+            </div>
           </div>
         </div>
       </footer>

@@ -1,7 +1,9 @@
+import { nanoid } from "nanoid";
 import { assign, createMachine } from "xstate";
 
 type Context = {
-  subtitles: string[];
+  current?: string;
+  subtitles: Map<string, string>;
 };
 
 type States =
@@ -18,19 +20,29 @@ type States =
       value: "searching";
     };
 
-type Events = { type: "ADD" };
+type Events =
+  | { type: "ADD"; url: string }
+  | { type: "SET.current"; id: string };
 
 const machine = createMachine<Context, Events, States>({
   initial: "disabled",
 
   context: {
-    subtitles: [],
+    subtitles: new Map(),
   },
 
   on: {
     ADD: {
+      actions: assign(({ subtitles }, { url }) => {
+        const id = nanoid();
+        subtitles.set(id, url);
+        return { subtitles, current: id };
+      }),
+    },
+
+    "SET.current": {
       actions: assign({
-        subtitles: (_) => [],
+        current: (_, { id }) => id,
       }),
     },
   },
