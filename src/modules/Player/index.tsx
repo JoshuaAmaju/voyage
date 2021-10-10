@@ -17,7 +17,7 @@ import { createRef, useEffect, useMemo, useRef, useState } from "react";
 import VTTConverter from "srt-webvtt";
 import { Helmet } from "react-helmet";
 import { useHistory } from "react-router-dom";
-import { IconButton, Slider, Typography } from "../../exports/components";
+import { Slider, Typography } from "../../exports/components";
 import {
   ArrowCounterClockwise,
   ArrowLeft,
@@ -30,6 +30,8 @@ import {
   LockOpen,
   Pause,
   Play,
+  RectangleInsetBottom,
+  Speaker,
   SpeakerSlash,
   SpeakerWave2,
 } from "../../exports/icons";
@@ -39,6 +41,28 @@ import subtitleMachine from "./machines/subtitle";
 import userStateMachine from "./machines/user-state";
 import "./style.css";
 import { formatTime } from "./utils";
+import usePlayerStore from "../../zustand/player.store";
+import { useManager } from "../../context/Manager";
+import { motion } from "framer-motion";
+import { omit } from "ramda";
+import { styled } from "@material-ui/core";
+
+const IconButton = styled("button")({
+  all: "unset",
+  fontFamily: "inherit",
+  borderRadius: "100%",
+  // height: 35,
+  // width: 35,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "inherit",
+  // backgroundColor: "white",
+  // boxShadow: `0 2px 10px ${blackA.blackA7}`,
+  // "&:hover": { backgroundColor: violet.violet3 },
+  "&:focus": { boxShadow: `0 0 0 2px black` },
+  "&:disabled": { filter: "contrast(0.3)" },
+});
 
 const mainProps = {
   width: 60,
@@ -75,8 +99,13 @@ const overflowAnchor: Record<
 function Player() {
   const history = useHistory();
 
+  const store = usePlayerStore();
+
+  const { enterFloat } = useManager();
+
   const { state } = history.location;
-  const file = state as File | undefined;
+
+  const file = (store.file ?? state) as File | undefined;
 
   const ref = createRef<HTMLDivElement>();
   const videoRef = createRef<HTMLVideoElement>();
@@ -89,7 +118,7 @@ function Player() {
 
   const [cue, setCue] = useState<string | null>();
 
-  console.log(userState.value, userState.event);
+  // console.log(userState.value, userState.event);
 
   const [layout, sendLayout] = useMachine(layoutMachine, {
     actions: {
@@ -195,10 +224,13 @@ function Player() {
 
             video.addEventListener("loadeddata", () => {
               resolve({ duration: video.duration });
-              video.play();
+              if (store.isPlaying) video.play();
             });
 
             video.addEventListener("error", reject);
+
+            video.volume = store.volume;
+            video.currentTime = store.currentTime;
             video.src = URL.createObjectURL(file);
 
             // video.src = URL.createObjectURL(
@@ -333,7 +365,7 @@ function Player() {
       ])}
     >
       <Helmet>
-        <title>Voyage | {file?.name}</title>
+        <title>Voyage | {`${file?.name}`}</title>
       </Helmet>
 
       <header className="header hideable lockable">
@@ -393,7 +425,7 @@ function Player() {
         </div>
       </header>
 
-      <main className="w-full h-full relative">
+      <motion.main layoutId="player" className="w-full h-full relative">
         <input
           hidden
           type="file"
@@ -482,7 +514,7 @@ function Player() {
             </IconButton>
           </div>
         </div>
-      </main>
+      </motion.main>
 
       <footer className="footer space-y-3">
         <div className="captions-container">
@@ -529,9 +561,27 @@ function Player() {
                 "lockable",
                 "flex",
                 "items-center",
-                "space-x-3",
+                "space-x-5",
+                "text-white",
               ])}
             >
+              <IconButton
+                disabled={!file || layout.matches({ fullscreen: "entered" })}
+                onClick={() => {
+                  enterFloat();
+                  history.goBack();
+
+                  store.set({
+                    file,
+                    volume,
+                    currentTime,
+                    isPlaying: player.matches({ loaded: "playing" }),
+                  });
+                }}
+              >
+                <RectangleInsetBottom {...omit(["color"], svgProps)} />
+              </IconButton>
+
               <PopoverState variant="popover">
                 {(state) => {
                   return (
@@ -546,7 +596,7 @@ function Player() {
                         {volume > 0 ? (
                           <SpeakerWave2 {...svgProps} />
                         ) : (
-                          <SpeakerSlash {...svgProps} />
+                          <Speaker {...svgProps} />
                         )}
                       </IconButton>
 

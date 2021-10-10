@@ -1,9 +1,10 @@
 import { IconButton } from "@material-ui/core";
 import { useMachine } from "@xstate/react";
 import "./style.css";
-import React, { createRef, useCallback } from "react";
+import React, { createRef, useCallback, useEffect } from "react";
 import {
   ArrowCounterClockwise,
+  ArrowUpBackwardCircle,
   Pause,
   Play,
   RectangleInsetBottom,
@@ -20,21 +21,23 @@ const noop = () => {};
 const icon = {
   width: 30,
   height: 30,
+  color: "white",
 };
 
 const small = {
   width: 20,
   height: 20,
+  color: "white",
 };
 
 const Floater = () => {
   const history = useHistory();
 
-  const { file, currentTime } = usePlayerStore();
+  const { enterFull } = useManager();
 
   const videoRef = createRef<HTMLVideoElement>();
 
-  const { enterFull } = useManager();
+  const { file, volume, currentTime, ...store } = usePlayerStore();
 
   const setPlayer = usePlayerStore(({ set }) => set);
 
@@ -62,11 +65,12 @@ const Floater = () => {
           if (file && video) {
             video.addEventListener("loadeddata", () => {
               resolve({ duration: video.duration });
-              video.play();
+              if (store.isPlaying) video.play();
             });
 
             video.addEventListener("error", reject);
 
+            video.volume = volume;
             video.currentTime = currentTime;
             video.src = URL.createObjectURL(file);
           }
@@ -92,6 +96,7 @@ const Floater = () => {
           video?.removeEventListener("play", onPlay);
           video?.removeEventListener("pause", onPause);
           video?.removeEventListener("ended", onEnded);
+          video?.removeEventListener("timeupdate", onTimeUpdate);
         };
       },
     },
@@ -157,22 +162,26 @@ const Floater = () => {
         <div
           className={clsx([
             "w-full absolute",
-            "top-0 left-0 p-4",
+            "top-0 left-0 p-2",
             "flex items-center justify-between",
           ])}
         >
-          <IconButton onClick={onClose}>
-            <XMark {...small} />
-          </IconButton>
-
           <IconButton
             onClick={() => {
               enterFull();
-              history.push("/player", null);
-              setPlayer({ currentTime: context.currentTime });
+              history.push("/player", file);
+
+              setPlayer({
+                currentTime: context.currentTime,
+                isPlaying: player.matches({ loaded: "playing" }),
+              });
             }}
           >
-            <RectangleInsetBottom {...small} />
+            <ArrowUpBackwardCircle {...icon} />
+          </IconButton>
+
+          <IconButton onClick={onClose}>
+            <XMark {...small} />
           </IconButton>
         </div>
 
