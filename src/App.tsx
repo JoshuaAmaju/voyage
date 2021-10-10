@@ -1,5 +1,10 @@
 import clsx from "clsx";
-import { AnimateSharedLayout, motion } from "framer-motion";
+import {
+  AnimatePresence,
+  AnimateSharedLayout,
+  motion,
+  useAnimation,
+} from "framer-motion";
 import { createRef, useRef, useMemo, createElement } from "react";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 import { useManager } from "./context/Manager";
@@ -12,9 +17,14 @@ import { usePrevious } from "react-use";
 function App() {
   const docRef = useRef(document.getElementById("root"));
 
-  const { isFloating } = useManager();
+  const controls = useAnimation();
 
-  const file = usePlayerStore(({ file }) => file);
+  const { isFloating, enterFull } = useManager();
+
+  const { file, reset } = usePlayerStore(({ file, reset }) => ({
+    file,
+    reset,
+  }));
 
   const prevFile = usePrevious(file);
 
@@ -22,13 +32,13 @@ function App() {
 
   // recreate the floater display whenever the user selects a new file
   const Node = useMemo(() => {
-    return () =>
+    return (props: any) =>
       file?.name !== prevFile?.name &&
       file?.size !== prevFile?.size &&
       file?.type !== prevFile?.type ? (
-        createElement(Floater)
+        createElement(Floater, props)
       ) : (
-        <Floater />
+        <Floater {...props} />
       );
   }, [
     file?.name,
@@ -56,16 +66,25 @@ function App() {
           <motion.div
             drag
             ref={ref}
+            key="floater"
+            initial={false}
             layoutId="player"
+            animate={controls}
             dragConstraints={docRef}
-            exit={{ scale: 0.6, opacity: 0 }}
             className={clsx([
               "w-96 h-60",
               "fixed right-0 bottom-0",
               "m-4 rounded-lg overflow-hidden",
             ])}
           >
-            <Node />
+            <Node
+              onClose={() => {
+                controls.start({ scale: 0.7, opacity: 0 }).then(() => {
+                  enterFull();
+                  reset();
+                });
+              }}
+            />
           </motion.div>
         )}
         {/* </AnimatePresence> */}

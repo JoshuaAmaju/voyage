@@ -30,7 +30,7 @@ const small = {
   color: "white",
 };
 
-const Floater = () => {
+const Floater = ({ onClose }: { onClose?: () => void }) => {
   const history = useHistory();
 
   const { enterFull } = useManager();
@@ -39,7 +39,7 @@ const Floater = () => {
 
   const { file, volume, currentTime, ...store } = usePlayerStore();
 
-  const setPlayer = usePlayerStore(({ set }) => set);
+  const [setPlayer, reset] = usePlayerStore(({ set, reset }) => [set, reset]);
 
   //   const [cue, setCue] = useState<string | null>();
 
@@ -102,16 +102,17 @@ const Floater = () => {
     },
   });
 
-  const { context } = player;
+  // const { context } = player;
 
   const hasEnded = player.matches("ended");
   const isPaused = player.matches({ loaded: "paused" });
   const isPlaying = player.matches({ loaded: "playing" });
 
-  const onClose = useCallback(() => {
+  const _onClose = useCallback(() => {
     enterFull();
-    setPlayer({ file: null });
-  }, [enterFull, setPlayer]);
+    onClose?.();
+    reset();
+  }, [enterFull, onClose, reset]);
 
   //   useEffect(() => {
   //     const video = videoRef.current;
@@ -172,7 +173,7 @@ const Floater = () => {
               history.push("/player", file);
 
               setPlayer({
-                currentTime: context.currentTime,
+                currentTime: videoRef.current?.currentTime,
                 isPlaying: player.matches({ loaded: "playing" }),
               });
             }}

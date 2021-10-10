@@ -8,6 +8,7 @@ type Context = {
 };
 
 type Actions = {
+  reset: () => void;
   set(args: Partial<Context>): void;
 };
 
@@ -18,6 +19,7 @@ const useStore = create<State>((set, get) => ({
   currentTime: 0,
   isPlaying: true,
   set: (args) => set({ ...get(), ...args }),
+  reset: () => set({ file: null, volume: 1, currentTime: 0, isPlaying: false }),
 }));
 
 export default useStore;

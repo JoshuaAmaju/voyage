@@ -49,18 +49,18 @@ import { styled } from "@material-ui/core";
 
 const IconButton = styled("button")({
   all: "unset",
-  fontFamily: "inherit",
-  borderRadius: "100%",
   // height: 35,
   // width: 35,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
   color: "inherit",
+  borderRadius: "100%",
+  alignItems: "center",
+  fontFamily: "inherit",
+  display: "inline-flex",
+  justifyContent: "center",
   // backgroundColor: "white",
   // boxShadow: `0 2px 10px ${blackA.blackA7}`,
   // "&:hover": { backgroundColor: violet.violet3 },
-  "&:focus": { boxShadow: `0 0 0 2px black` },
+  // "&:focus": { boxShadow: `0 0 0 2px black` },
   "&:disabled": { filter: "contrast(0.3)" },
 });
 
@@ -574,7 +574,7 @@ function Player() {
                   store.set({
                     file,
                     volume,
-                    currentTime,
+                    currentTime: videoRef.current?.currentTime,
                     isPlaying: player.matches({ loaded: "playing" }),
                   });
                 }}
