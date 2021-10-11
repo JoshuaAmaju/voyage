@@ -13,6 +13,7 @@ import Home from "./modules/Home";
 import Player from "./modules/Player";
 import usePlayerStore from "./zustand/player.store";
 import { usePrevious } from "react-use";
+import { flow } from "fp-ts/lib/function";
 
 function App() {
   const docRef = useRef(document.getElementById("root"));
@@ -79,10 +80,9 @@ function App() {
           >
             <Node
               onClose={() => {
-                controls.start({ scale: 0.7, opacity: 0 }).then(() => {
-                  enterFull();
-                  reset();
-                });
+                controls
+                  .start({ scale: 0.7, opacity: 0 })
+                  .then(flow(enterFull, reset));
               }}
             />
           </motion.div>
