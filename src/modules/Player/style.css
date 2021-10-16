@@ -36,6 +36,10 @@
   pointer-events: none;
 }
 
+.hideable--cursor {
+  cursor: none;
+}
+
 .lock .lockable {
   visibility: hidden;
   pointer-events: none;
@@ -53,4 +57,26 @@
 
 .volume-popover {
   min-height: 10rem !important;
+}
+
+::cue {
+  background: transparent;
+}
+
+.captions-container {
+  @apply space-y-2;
+  padding: 0 1rem;
+}
+
+.caption {
+  color: white;
+  margin: auto;
+  line-height: 185%;
+  width: fit-content;
+  border-radius: 2px;
+  text-align: center;
+  padding: 0.2em 1em;
+  white-space: pre-wrap;
+  background: #000000b5;
+  box-decoration-break: clone;
 }

@@ -15,6 +15,11 @@ import { ReactComponent as Play } from "../assets/sf-symbols/play.fill.svg";
 import { ReactComponent as Plus } from "../assets/sf-symbols/plus.svg";
 import { ReactComponent as SpeakerSlash } from "../assets/sf-symbols/speaker.slash.fill.svg";
 import { ReactComponent as SpeakerWave2 } from "../assets/sf-symbols/speaker.wave.2.fill.svg";
+import { ReactComponent as ArrowUpBackwardCircle } from "../assets/sf-symbols/arrow.up.backward.circle.fill.svg";
+import { ReactComponent as RectangleOnRectangle } from "../assets/sf-symbols/rectangle.fill.on.rectangle.fill.svg";
+import { ReactComponent as RectangleInsetBottom } from "../assets/sf-symbols/rectangle.inset.bottomtrailing.filled.svg";
+import { ReactComponent as Speaker } from "../assets/sf-symbols/speaker.fill.svg";
+import { ReactComponent as XMark } from "../assets/sf-symbols/xmark.svg";
 
 export {
   MoreVert as Ellipsis,
@@ -33,4 +38,9 @@ export {
   ArrowLeft,
   SpeakerSlash,
   SpeakerWave2,
+  ArrowUpBackwardCircle,
+  RectangleOnRectangle,
+  RectangleInsetBottom,
+  Speaker,
+  XMark,
 };
