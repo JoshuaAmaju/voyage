@@ -1,12 +1,10 @@
-import { actions, createMachine } from "xstate";
+import { createMachine } from "xstate";
 
 type Context = {};
 
 type States = { value: "active" | "inactive" | "waiting"; context: Context };
 
 type Events = { type: "ACTIVE" | "INACTIVE" | "CYCLE" | "SUSPEND" | "RESUME" };
-
-const { send, cancel } = actions;
 
 const machine = createMachine<Context, Events, States>({
   initial: "active",
@@ -24,9 +22,12 @@ const machine = createMachine<Context, Events, States>({
         INACTIVE: "inactive",
       },
 
-      entry: send("INACTIVE", { delay: 4000, id: "timer" }),
-
-      exit: cancel("timer"),
+      invoke: {
+        src: () => (send) => {
+          let id = setTimeout(() => send("INACTIVE"), 3500);
+          return () => clearTimeout(id);
+        },
+      },
     },
 
     inactive: {

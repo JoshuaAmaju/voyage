@@ -1,10 +1,11 @@
 import { createRef, useCallback } from "react";
 import clsx from "clsx";
 import { Helmet } from "react-helmet";
-import { Typography, Button } from "../exports/components";
+import { Typography } from "../exports/components";
 import { useHistory } from "react-router-dom";
 import usePlayerStore from "../zustand/player.store";
 import { useManager } from "../context/Manager";
+import Button from "../components/Button";
 
 function Home() {
   const history = useHistory();
@@ -20,47 +21,40 @@ function Home() {
   }, [ref]);
 
   return (
-    <div
-      className={clsx([
-        "h-full",
-        "flex",
-        "flex-col",
-        "items-center",
-        "justify-center",
-        "space-y-2",
-      ])}
-    >
+    <>
       <Helmet>
         <title>Voyage | Home</title>
       </Helmet>
 
-      <Typography variant="h4">Get started</Typography>
+      <div className="h-full flex flex-col items-center justify-center space-y-4">
+        <Typography variant="h5">Get started</Typography>
 
-      <Button variant="contained" color="primary" onClick={onClick}>
-        Select File
-      </Button>
+        <Button variant="contained" onClick={onClick}>
+          Select File
+        </Button>
 
-      <input
-        hidden
-        ref={ref}
-        type="file"
-        name="file"
-        // accept="video/*"
-        onChange={({ target: { files } }) => {
-          if (files) {
-            const [file] = files;
-            if (!isFloating) history.push("/player", file);
+        <input
+          hidden
+          ref={ref}
+          type="file"
+          name="file"
+          // accept="video/*"
+          onChange={({ target: { files } }) => {
+            if (files) {
+              const [file] = files;
+              if (!isFloating) history.push("/player", file);
 
-            setPlayer({
-              file,
-              volume: 1,
-              currentTime: 0,
-              isPlaying: true,
-            });
-          }
-        }}
-      />
-    </div>
+              setPlayer({
+                file,
+                volume: 1,
+                currentTime: 0,
+                isPlaying: true,
+              });
+            }
+          }}
+        />
+      </div>
+    </>
   );
 }
 
