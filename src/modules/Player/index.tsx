@@ -4,6 +4,7 @@ import {
   Popover,
   PopoverProps,
   Stack,
+  Tooltip,
 } from "@material-ui/core";
 import { useMachine } from "@xstate/react";
 import clsx from "clsx";
@@ -492,14 +493,7 @@ function Player() {
             //     sendUserState("CYCLE");
             //   }
             // }}
-            className={clsx([
-              "lockable",
-              "hideable",
-              "flex",
-              "items-center",
-              "justify-evenly",
-              "space-x-4",
-            ])}
+            className="lockable hideable flex items-center justify-evenly space-x-4"
           >
             <IconButton
               onClick={() => {
@@ -540,6 +534,17 @@ function Player() {
                   size="small"
                   max={duration}
                   value={currentTime}
+                  // valueLabelDisplay="on"
+                  // components={{
+                  //   ValueLabel: ({ value, children }) => {
+                  //     return (
+                  //       <div>
+                  //         <video className="w-[10rem] h-[15rem] absolute left-0 bottom-full bg-gray-300" />
+                  //         {children}
+                  //       </div>
+                  //     );
+                  //   },
+                  // }}
                   onChange={() => {
                     sendUserState("SUSPEND");
                   }}

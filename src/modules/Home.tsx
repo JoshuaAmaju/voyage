@@ -1,10 +1,11 @@
 import { createRef, useCallback } from "react";
 import clsx from "clsx";
 import { Helmet } from "react-helmet";
-import { Typography, Button } from "../exports/components";
+import { Typography } from "../exports/components";
 import { useHistory } from "react-router-dom";
 import usePlayerStore from "../zustand/player.store";
 import { useManager } from "../context/Manager";
+import Button from "../components/Button";
 
 function Home() {
   const history = useHistory();
@@ -25,10 +26,10 @@ function Home() {
         <title>Voyage | Home</title>
       </Helmet>
 
-      <div className="h-full flex flex-col items-center justify-center space-y-2">
-        <Typography variant="h4">Get started by watching something</Typography>
+      <div className="h-full flex flex-col items-center justify-center space-y-4">
+        <Typography variant="h5">Get started</Typography>
 
-        <Button variant="contained" color="primary" onClick={onClick}>
+        <Button variant="contained" onClick={onClick}>
           Select File
         </Button>
 

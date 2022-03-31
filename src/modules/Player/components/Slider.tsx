@@ -8,17 +8,21 @@ const IOSSlider = styled(Slider)(({ theme }) => ({
   height: 2,
   padding: "15px 0",
   "& .MuiSlider-thumb": {
-    width: 20,
-    height: 20,
+    width: 10,
+    height: 10,
     backgroundColor: "#fff",
     boxShadow: iOSBoxShadow,
-    "&:focus, &:hover, &.Mui-active": {
+    "&:focus, &:hover, &.Mui-focusVisible": {
       boxShadow:
         "0 3px 1px rgba(0,0,0,0.1),0 4px 8px rgba(0,0,0,0.3),0 0 0 1px rgba(0,0,0,0.02)",
       // Reset on touch devices, it doesn't add specificity
       "@media (hover: none)": {
         boxShadow: iOSBoxShadow,
       },
+    },
+    "&.Mui-active": {
+      width: 20,
+      height: 20,
     },
   },
   "& .MuiSlider-valueLabel": {
