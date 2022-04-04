@@ -3,6 +3,8 @@ import {
   ListItem,
   Popover,
   PopoverProps,
+  Popper,
+  PopperProps,
   Stack,
   Tooltip,
 } from "@material-ui/core";
@@ -15,7 +17,14 @@ import PopoverState, {
   bindTrigger,
 } from "material-ui-popup-state";
 import { omit } from "ramda";
-import { createRef, useEffect, useMemo, useState } from "react";
+import {
+  cloneElement,
+  createRef,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Helmet } from "react-helmet";
 import { useHistory } from "react-router-dom";
 import VTTConverter from "srt-webvtt";
@@ -102,6 +111,15 @@ function Player() {
   const [cue, setCue] = useState<string | null>();
 
   const overlayRef = createRef<HTMLDivElement>();
+
+  const thumbRef = createRef<HTMLDivElement>();
+
+  const previewRef = createRef<HTMLVideoElement>();
+
+  // const src = file && URL.createObjectURL(file);
+
+  const [scrubTime, setScrubTime] = useState(0);
+  const [scrubbing, setScrubbing] = useState(false);
 
   // console.log(userState.value, userState.event);
 
@@ -285,6 +303,15 @@ function Player() {
     //   label: "About",
     // },
   ];
+
+  useEffect(() => {
+    const preview = previewRef.current;
+
+    if (preview) {
+      preview.currentTime = scrubTime;
+      if (file && !preview.src) preview.src = URL.createObjectURL(file);
+    }
+  }, [file, previewRef, scrubTime]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -524,6 +551,16 @@ function Player() {
               userState.matches("inactive") && ["lockable", "hideable"],
             ])}
           >
+            {scrubbing && (
+              <div className="flex p-4">
+                <video
+                  ref={previewRef}
+                  className="m-auto bg-black rounded-md"
+                  style={{ width: "20rem", height: "10rem" }}
+                />
+              </div>
+            )}
+
             <div className="captions-container">
               {cue && <p className="caption">{cue}</p>}
             </div>
@@ -533,24 +570,62 @@ function Player() {
                 <Slider
                   size="small"
                   max={duration}
-                  value={currentTime}
-                  // valueLabelDisplay="on"
+                  // valueLabelDisplay="auto"
+                  value={scrubbing ? scrubTime : currentTime}
+                  onPointerLeave={() => sendUserState("RESUME")}
+                  onPointerEnter={() => sendUserState("SUSPEND")}
                   // components={{
-                  //   ValueLabel: ({ value, children }) => {
+                  //   ValueLabel: ({ open, children, value }) => {
+                  //     // console.log('ref', previewRef);
+
+                  //     const preview = previewRef.current;
+
+                  //     if (preview) {
+                  //       preview.currentTime = value;
+                  //       if (src && !preview.src) preview.src = src;
+                  //     }
+
                   //     return (
-                  //       <div>
-                  //         <video className="w-[10rem] h-[15rem] absolute left-0 bottom-full bg-gray-300" />
-                  //         {children}
-                  //       </div>
+                  //       <>
+                  //         {cloneElement(children, {
+                  //           ...children.props,
+                  //           ref: thumbRef,
+                  //         })}
+
+                  //         {/* <video
+                  //           ref={previewRef}
+                  //           // src={file && URL.createObjectURL(file)}
+                  //           className="bg-gray-400"
+                  //           style={{ width: "20rem", height: "20rem" }}
+                  //         /> */}
+
+                  //         {thumbRef.current && (
+                  //           <Popper
+                  //             open={open}
+                  //             anchorEl={thumbRef.current}
+                  //             id={open ? "simple-popper" : undefined}
+                  //           >
+                  //             <video
+                  //               ref={previewRef}
+                  //               className="bg-black"
+                  //               style={{ width: "20rem", height: "10rem" }}
+                  //               // src={file && URL.createObjectURL(file)}
+                  //             />
+                  //           </Popper>
+                  //         )}
+                  //       </>
                   //     );
                   //   },
                   // }}
-                  onChange={() => {
+                  onChange={(_, value) => {
+                    setScrubbing(true);
                     sendUserState("SUSPEND");
+                    setScrubTime(value as number);
                   }}
                   onChangeCommitted={(_, value) => {
+                    setScrubbing(false);
                     sendPlayer({ type: "SEEK", value: value as number });
-                    sendUserState("RESUME");
+                    if (userState.matches("inactive")) sendUserState("RESUME");
                   }}
                 />
 
