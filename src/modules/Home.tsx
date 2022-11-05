@@ -29,7 +29,7 @@ function Home() {
       <div className="h-full flex flex-col items-center justify-center space-y-4">
         <Typography variant="h5">Get started</Typography>
 
-        <Button variant="contained" onClick={onClick}>
+        <Button disableElevation variant="contained" onClick={onClick}>
           Select File
         </Button>
 
